@@ -1,0 +1,209 @@
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal:not(.hidden) {
+    display: block;
+    opacity: 1;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transform: translateY(-50px);
+    transition: transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal:not(.hidden) .modal-content {
+    transform: translateY(0);
+    animation: slideDown 0.3s ease;
+}
+
+/* Modal Header */
+.modal-content h2,
+.modal-content h3 {
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #007BFF 0%, #0056b3 100%);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+/* Close Button */
+.close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    z-index: 10;
+}
+
+.close:hover {
+    color: #ff4757;
+    transform: scale(1.1);
+}
+
+/* Modal Body (spacing only) */
+.modal-content > form,
+.modal-content > div:not(.modal-actions) {
+    padding: 25px;
+}
+
+/* Modal Actions Layout */
+.modal-actions {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+/* Toast Notification (modal-only display) */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    z-index: 2000;
+    display: none;
+    min-width: 300px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    background-color:black;
+    color:white;
+}
+
+.toast:not(.hidden) {
+    display: block;
+    transform: translateX(0);
+    animation: slideInRight 0.3s ease;
+}
+
+/* View Modal Specific */
+#viewModal .modal-content {
+    max-width: 600px;
+}
+
+#viewModalBody {
+    line-height: 1.6;
+}
+
+#viewModalBody p {
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+#viewModalBody p:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+#viewModalBody strong {
+    color: #007BFF;
+    font-weight: 600;
+}
+
+/* Delete Modal Specific */
+#deleteModal .modal-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+#deleteModal h3 {
+    background: linear-gradient(135deg, #DC3545 0%, #c82333 100%);
+    padding: 25px;
+}
+
+#deleteModal .modal-actions {
+    justify-content: center;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .modal-content { margin: 10% auto; width: 85%; }
+    .modal-content h2, .modal-content h3 { font-size: 1.3rem; padding: 18px; }
+    .modal-content > form, .modal-content > div:not(.modal-actions) { padding: 20px; }
+    .modal-actions { padding: 18px; flex-direction: column; }
+    .toast { left: 20px; right: 20px; min-width: auto; text-align: center; }
+}
+
+@media (max-width: 480px) {
+    .modal-content { margin: 15% auto; width: 95%; border-radius: 8px; }
+    .modal-content h2, .modal-content h3 { font-size: 1.2rem; padding: 16px; border-radius: 8px 8px 0 0; }
+    .modal-content > form, .modal-content > div:not(.modal-actions) { padding: 16px; }
+    .close { top: 12px; right: 16px; font-size: 24px; }
+}
+
+@media (max-width: 320px) {
+    .modal-content { margin: 20% auto; width: 98%; }
+    .modal-content h2, .modal-content h3 { font-size: 1.1rem; padding: 14px; }
+}
+
+@media print {
+    .modal { display: none !important; }
+}
