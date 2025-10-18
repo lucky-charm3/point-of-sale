@@ -17,22 +17,38 @@ function createReport($type, $start_date, $end_date, $generated_by = null) {
 
 function getReports($limit = 10) {
     global $conn;
+    
+    // Add error handling
+    if (!$conn) {
+        error_log("Database connection failed");
+        return false;
+    }
+    
     $sql = "SELECT r.id, r.type, r.start_date, r.end_date, r.created_at, u.username AS generated_by
             FROM reports r
             LEFT JOIN users u ON r.generated_by = u.id
             ORDER BY r.created_at DESC 
             LIMIT ?";
-
+    
     $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return false;
+    }
+    
     $stmt->bind_param("i", $limit);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        error_log("Execute failed: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+    
     $result = $stmt->get_result();
-
     $reports = [];
     while($row = $result->fetch_assoc()) {
         $reports[] = $row;
     }
-
+    
     $stmt->close();
     return $reports;
 }
@@ -56,28 +72,28 @@ function generateReport($type, $range, $generated_by) {
 
     switch($type){
         case 'sales':
-    $sql = "SELECT 
-                s.id, 
-                s.total_price, 
-                s.payment_method, 
-                s.created_at,
-                u.username AS cashier,
-                GROUP_CONCAT(CONCAT(p.name, ' (Qty: ', si.quantity, ', Price: Tshs ', si.price, ')') SEPARATOR '; ') AS items_list
-            FROM sales s
-            JOIN users u ON s.user_id = u.id
-            JOIN sale_items si ON s.id = si.sale_id
-            JOIN products p ON si.product_id = p.id
-            WHERE s.created_at BETWEEN ? AND ?
-            GROUP BY s.id
-            ORDER BY s.created_at ASC";
-
-    $stmt = $conn->prepare($sql);
-    break;
+            $sql = "SELECT 
+                    s.id, 
+                    s.total_price, 
+                    s.payment_method, 
+                    s.created_at,
+                    u.username AS cashier,
+                    GROUP_CONCAT(CONCAT(p.name, ' (Qty: ', si.quantity, ', Price: Tshs ', si.price, ')') SEPARATOR '; ') AS items_list
+                FROM sales s
+                JOIN users u ON s.user_id = u.id
+                JOIN sale_items si ON s.id = si.sale_id
+                JOIN products p ON si.product_id = p.id
+                WHERE s.created_at BETWEEN ? AND ?
+                GROUP BY s.id
+                ORDER BY s.created_at ASC";
+            $stmt = $conn->prepare($sql);
+            break;
 
         case 'expenses':
-            $stmt = $conn->prepare("SELECT e.id, e.name, e.amount, e.category, u.username AS user, e.created_at
+            $stmt = $conn->prepare("SELECT e.id, e.name, e.amount, ec.name AS category, u.username AS user, e.created_at
                                     FROM expenses e
                                     JOIN users u ON e.user_id = u.id
+                                    JOIN expense_categories ec ON e.category_id = ec.id
                                     WHERE e.created_at BETWEEN ? AND ?");
             break;
 
@@ -92,18 +108,19 @@ function generateReport($type, $range, $generated_by) {
             $stmt = $conn->prepare("SELECT * FROM income WHERE created_at BETWEEN ? AND ?");
             break;
 
-       case 'inventory':
-            $sql = "SELECT id, name, barcode, price, stock, category_id, created_at FROM products";
+        case 'inventory':
+            $sql = "SELECT p.id, p.name, p.barcode, p.price, p.stock, pc.name AS category, p.created_at 
+                    FROM products p 
+                    LEFT JOIN product_categories pc ON p.category_id = pc.id";
             $stmt = $conn->prepare($sql);
             break;
-
 
         default:
             return ['success'=>false, 'message'=>'Invalid report type'];
     }
 
     if($type !== 'inventory'){
-        $stmt->bind_param("ss",$start,$end);
+        $stmt->bind_param("ss", $start, $end);
     }
 
     $stmt->execute();
@@ -111,13 +128,19 @@ function generateReport($type, $range, $generated_by) {
     $stmt->close();
     
     $reportContent = json_encode($data);
+    
     $stmtReport = $conn->prepare("INSERT INTO reports (type, start_date, end_date, generated_by, content, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
     $stmtReport->bind_param("sssis", $type, $start, $end, $generated_by, $reportContent);
-    $stmtReport->execute();
-    $report_id = $conn->insert_id;
-    $stmtReport->close();
     
-    return ['success' => true, 'report_id' => $report_id, 'data' => $data, 'type' => $type, 'start_date' => $start, 'end_date' => $end];
+    if($stmtReport->execute()) {
+        $report_id = $conn->insert_id;
+        $stmtReport->close();
+        
+        return ['success' => true, 'report_id' => $report_id, 'data' => $data, 'type' => $type, 'start_date' => $start, 'end_date' => $end];
+    } else {
+        $stmtReport->close();
+        return ['success' => false, 'message' => 'Failed to save report to database'];
+    }
 }
 
 function getDateRange($range) {

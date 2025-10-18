@@ -102,6 +102,14 @@ function addProduct() {
 }
 
 function openEditProductModal(id) {
+    document.getElementById('editModalTitle').innerText = 'Edit Product';
+    document.getElementById('editId').value = '';
+    document.getElementById('editModalBody').innerHTML = `
+        <div class="loading-spinner">Loading product data...</div>
+    `;
+    
+    openModal('editModal');
+
     fetch(`../apis/products-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(product => {
@@ -130,7 +138,6 @@ function openEditProductModal(id) {
                 </div>
             `;
             document.getElementById('editForm').onsubmit = (e) => { e.preventDefault(); updateProduct(id); };
-            openModal('editModal');
             loadCategoriesSelect("editProductCategory",product.category_id);
         });
 }
@@ -155,6 +162,13 @@ function updateProduct(id) {
 }
 
 function viewProduct(id) {
+    document.getElementById('viewModalTitle').innerText = 'Product Details';
+    document.getElementById('viewModalBody').innerHTML = `
+        <div class="loading-spinner">Loading product details...</div>
+    `;
+    
+    openModal('viewModal');
+
     fetch(`../apis/products-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(product => {

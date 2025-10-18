@@ -33,7 +33,7 @@ function fetchUsers(search="") {
                     actions.push({
                         type: 'delete',
                         label: 'Delete User',
-                        onclick: `confirmDelete(${user.id}, 'user', () => deleteProduct(${user.id})); actionDropdown.closeAll();`
+                        onclick: `confirmDelete(${user.id}, 'user', () => deleteUser(${user.id})); actionDropdown.closeAll();`
                     });
                 }
 
@@ -151,6 +151,14 @@ function openAddUserModal() {
 }
 
 function openEditUserModal(id) {
+    document.getElementById('editModalTitle').innerText = 'Edit Expense';
+    document.getElementById('editId').value = '';
+    document.getElementById('editModalBody').innerHTML = `
+        <div class="loading-spinner">Loading user data...</div>
+    `;
+    
+    openModal('editModal');
+
     fetch(`../apis/users-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(response => {
@@ -198,7 +206,6 @@ function openEditUserModal(id) {
                     </div>
                 `;
                 document.getElementById('editForm').onsubmit = (e) => { e.preventDefault(); updateUser(id); };
-                openModal('editModal');
             } else {
                  showToast(response.message, 'error');
             }
@@ -218,7 +225,11 @@ function addUser() {
     .then(result => {
         closeModal("addModal");
         showToast(result.success ? 'User added successfully' : result.message, result.success ? 'success' : 'error');
-        if (result.success) fetchUsers();
+        if (result.success) 
+            {
+                if(window.userRole==='admin')  fetchUsers();
+                else if(window.userRole==='manager') fetchCashiers();              
+            }
     })
     .catch(err => showToast('An unexpected error occurred.', 'error'));
 }
@@ -237,12 +248,23 @@ function updateUser(id) {
     .then(result => {
         closeModal('editModal');
         showToast(result.success ? 'User updated successfully' : result.message || 'Error updating user', result.success ? 'success' : 'error');
-        if (result.success) fetchUsers();
+       if (window.userRole === 'admin') {
+        fetchUsers();
+    } else if (window.userRole === 'manager') {
+        fetchCashiers();
+    }
     })
     .catch(err => showToast('An unexpected error occurred.', 'error'));
 }
 
 function viewUser(id) {
+  document.getElementById('viewModalTitle').innerText = 'Expense Details';
+    document.getElementById('viewModalBody').innerHTML = `
+        <div class="loading-spinner">Loading user details...</div>
+    `;
+    
+    openModal('viewModal');
+
     fetch(`../apis/users-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(response => {
@@ -257,7 +279,6 @@ function viewUser(id) {
                     <p><strong>Role:</strong> ${user.role}</p>
                     <p><strong>Created:</strong> ${new Date(user.created_at).toLocaleDateString()}</p>
                 `;
-                openModal('viewModal');
             } else {
                  showToast(response.message, 'error');
             }
@@ -270,9 +291,13 @@ function deleteUser(id) {
         .then(result => {
             closeModal('deleteModal');
             showToast(result.success ? 'User deleted successfully' : result.message, result.success ? 'success' : 'error');
-            if (result.success) {
-                fetchUsers();
-            }
+           if (result.success) {
+    if (window.userRole === 'admin') {
+        fetchUsers();
+    } else if (window.userRole === 'manager') {
+        fetchCashiers();
+    }
+}
         })
         .catch(err => {
             closeModal('deleteModal');

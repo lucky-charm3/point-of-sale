@@ -113,6 +113,22 @@ function addExpense() {
 }
 
 function openEditExpenseModal(id) {
+    document.getElementById('editModalTitle').innerText = 'Edit Expense';
+    document.getElementById('editId').value = '';
+    document.getElementById('editModalBody').innerHTML = `
+        <div class="loading-spinner">Loading expense data...</div>
+    `;
+    
+    openModal('editModal');
+
+    document.getElementById('editModalTitle').innerText = 'Edit Expense';
+    document.getElementById('editId').value = '';
+    document.getElementById('editModalBody').innerHTML = `
+        <div class="loading-spinner">Loading expense data...</div>
+    `;
+    
+    openModal('editModal');
+
     fetch(`../apis/expenses-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(expense => {
@@ -134,7 +150,6 @@ function openEditExpenseModal(id) {
             `;
             document.getElementById('editForm').onsubmit = (e) => { e.preventDefault(); updateExpense(id); };
             loadCategoriesSelect('editExpenseCategory',expense.category_id);
-            openModal('editModal');
         });
 }
 
@@ -158,6 +173,13 @@ function updateExpense(id) {
 }
 
 function viewExpense(id) {
+   document.getElementById('viewModalTitle').innerText = 'Expense Details';
+    document.getElementById('viewModalBody').innerHTML = `
+        <div class="loading-spinner">Loading expense details...</div>
+    `;
+    
+    openModal('viewModal');
+
     fetch(`../apis/expenses-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(expense => {
@@ -169,7 +191,6 @@ function viewExpense(id) {
                 <p><strong>User:</strong> ${expense.user}</p>
                 <p><strong>Date:</strong> ${new Date(expense.created_at).toLocaleString()}</p>
             `;
-            openModal('viewModal');
         });
 }
 
@@ -240,7 +261,7 @@ function fetchBanking(search='',page=1) {
                 actions.push({
                     type: 'view',
                     label: 'View Details',
-                    onclick: `viewBanking(${b.id}); actionDropdown.closeAll();`
+                    onclick: `viewTransaction(${b.id}); actionDropdown.closeAll();`
                 });
 
                 if (window.userRole === 'admin' || window.userRole === 'manager') {
@@ -317,7 +338,14 @@ function addBanking() {
     .catch(err => showToast('An unexpected error occurred.', 'error'));
 }
 
-function openEditBankModal(id) {
+function openEditBankingModal(id) {
+    document.getElementById('editModalTitle').innerText = 'Edit Expense';
+    document.getElementById('editId').value = '';
+    document.getElementById('editModalBody').innerHTML = `
+        <div class="loading-spinner">Loading banking data...</div>
+    `;
+    openModal('editModal');
+
     fetch(`../apis/banking-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(transaction => {
@@ -338,7 +366,6 @@ function openEditBankModal(id) {
                 </div>
             `;
             document.getElementById('editForm').onsubmit = (e) => { e.preventDefault(); updateBanking(id); };
-            openModal('editModal');
         });
 }
 
@@ -362,6 +389,13 @@ function updateBanking(id) {
 }
 
 function viewTransaction(id) {
+    document.getElementById('viewModalTitle').innerText = 'Expense Details';
+    document.getElementById('viewModalBody').innerHTML = `
+        <div class="loading-spinner">Loading transaction details...</div>
+    `;
+    
+    openModal('viewModal');
+
     fetch(`../apis/banking-api.php?action=getById&id=${id}`)
         .then(res => res.json())
         .then(transaction => {
@@ -373,7 +407,6 @@ function viewTransaction(id) {
                 <p><strong>User:</strong> ${transaction.user}</p>
                 <p><strong>Date:</strong> ${new Date(transaction.created_at).toLocaleString()}</p>
             `;
-            openModal('viewModal');
         });
 }
 
@@ -459,7 +492,7 @@ window.fetchBanking = fetchBanking;
 window.openAddExpenseModal = openAddExpenseModal;
 window.openAddBankingModal = openAddBankingModal;
 window.openEditExpenseModal = openEditExpenseModal;
-window.openEditBankModal = openEditBankModal;
+window.openEditBankingModal = openEditBankingModal;
 window.viewExpense = viewExpense;
 window.viewTransaction = viewTransaction;
 window.changeBankingPage = changeBankingPage;

@@ -431,25 +431,24 @@ function printReceipt(saleId) {
     fetch(`../apis/sales-api.php?action=getById&id=${saleId}`)
         .then(res => res.json())
         .then(response => {
-            const sale = response.data || response; // Handle both formats
+            const sale = response.data || response;
             
             if (sale && sale.id) {
-                const printWindow = window.open('', '_blank');
+                const printWindow = window.open('', '_blank', 'width=400,height=600');
                 
-                // Generate the receipt HTML
+                // Generate the POS-compatible receipt
                 const receiptHtml = generateReceiptHtml(sale);
                 
                 printWindow.document.write(receiptHtml);
                 printWindow.document.close();
                 
+                // Auto-print for POS systems
                 setTimeout(() => {
                     printWindow.print();
-                    // Optional: close the window after printing
-                    // printWindow.close();
-                }, 250);
+                    // Don't auto-close - let user decide
+                }, 500);
             } else {
                 showToast('Error: Sale details not found.', 'error');
-                console.error('Sale not found or invalid format:', response);
             }
         })
         .catch(err => {
@@ -458,190 +457,182 @@ function printReceipt(saleId) {
         });
 }
 
+
 function generateReceiptHtml(sale) {
     let itemsHtml = '';
     let total = 0;
     
     if (sale.items && Array.isArray(sale.items)) {
-        itemsHtml = sale.items.map(item => `
-            <tr>
-                <td>${item.product_name || item.product}</td>
-                <td>${item.quantity}</td>
-                <td>Tshs ${Number(item.price).toLocaleString()}</td>
-                <td>Tshs ${Number(item.quantity * item.price).toLocaleString()}</td>
-            </tr>
-        `).join('');
-        
-        total = sale.items.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
+        itemsHtml = sale.items.map(item => {
+            const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
+            total += itemTotal;
+            return `
+    <tr>
+        <td>${(item.product_name || item.product).substring(0, 20)}</td>
+        <td style="text-align:center">${item.quantity}</td>
+        <td style="text-align:right">${Number(item.price).toLocaleString()}</td>
+        <td style="text-align:right">${Number(itemTotal).toLocaleString()}</td>
+    </tr>`;
+        }).join('');
     } else {
-        // Single product sale (for backward compatibility)
+        // Single product sale
         itemsHtml = `
-            <tr>
-                <td>${sale.product}</td>
-                <td>${sale.quantity || 1}</td>
-                <td>Tshs ${Number(sale.total_price).toLocaleString()}</td>
-                <td>Tshs ${Number(sale.total_price).toLocaleString()}</td>
-            </tr>
-        `;
+    <tr>
+        <td>${sale.product.substring(0, 20)}</td>
+        <td style="text-align:center">${sale.quantity || 1}</td>
+        <td style="text-align:right">${Number(sale.total_price).toLocaleString()}</td>
+        <td style="text-align:right">${Number(sale.total_price).toLocaleString()}</td>
+    </tr>`;
         total = parseFloat(sale.total_price);
     }
 
     return `
-        <!DOCTYPE html>
-        <html>
+<!DOCTYPE html>
+<html>
 <head>
-    <title>Receipt #${sale.id}</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #${sale.id}</title>
     <style>
-        /* Paper size & layout */
-        html, body {
+        /* POS THERMAL PRINTER COMPATIBLE STYLES */
+        * {
             margin: 0;
             padding: 0;
-            font-family: "Courier New", monospace;
-            font-size: 12px;
-            color: #000;
-        }
-        body {
-            padding: 10px;
-            max-width: 58mm; /* receipt width for thermal printers */
             box-sizing: border-box;
         }
-
+        
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.2;
+            width: 80mm; /* Standard thermal paper width */
+            margin: 0 auto;
+            padding: 5px;
+            color: #000;
+            background: #fff;
+        }
+        
         .receipt-header {
             text-align: center;
             margin-bottom: 8px;
-            padding-bottom: 8px;
+            padding-bottom: 5px;
             border-bottom: 1px dashed #000;
         }
-
-        /* Inline hotel icon container */
-        .brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .brand svg {
-            width: 20px;
-            height: 20px;
-            vertical-align: middle;
-        }
-        .brand h2 {
-            margin: 0;
-            font-size: 14px;
+        
+        .hotel-name {
             font-weight: bold;
+            font-size: 14px;
+            margin: 3px 0;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
         }
-
+        
         .receipt-info {
-            margin: 8px 0;
+            margin: 5px 0;
             font-size: 11px;
         }
+        
         .receipt-info p {
-            margin: 2px 0;
+            margin: 1px 0;
         }
-
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 8px 0;
+            margin: 5px 0;
             font-size: 11px;
         }
+        
         th, td {
-            padding: 4px 2px;
+            padding: 2px 1px;
             text-align: left;
+            border-bottom: 1px dotted #ccc;
         }
+        
         th {
-            border-bottom: 1px solid #000;
-            font-weight: normal;
-        }
-
-        .item-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 180px;
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        .qty, .price, .line-total {
-            text-align: right;
-            vertical-align: top;
-            white-space: nowrap;
-        }
-
-        .total-row {
             font-weight: bold;
-            border-top: 1px solid #000;
-            margin-top: 6px;
-            padding-top: 6px;
+            border-bottom: 1px solid #000;
         }
-
+        
+        .total-row {
+            border-top: 2px solid #000;
+            margin-top: 5px;
+            padding-top: 5px;
+            font-weight: bold;
+        }
+        
         .footer {
             text-align: center;
-            margin-top: 12px;
+            margin-top: 10px;
+            padding-top: 5px;
             border-top: 1px dashed #000;
-            padding-top: 8px;
             font-size: 10px;
         }
-
-        .no-print {
-            margin-top: 12px;
+        
+        .barcode {
             text-align: center;
+            margin: 5px 0;
+            font-family: 'Libre Barcode 128', cursive;
+            font-size: 24px;
         }
-        .btn {
-            display: inline-block;
-            padding: 8px 12px;
-            margin: 4px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .btn-print { background: #007bff; color: #fff; }
-        .btn-close { background: #6c757d; color: #fff; }
-
+        
+        /* Thermal printer specific optimizations */
         @media print {
-            .no-print { display: none !important; }
-            body { padding: 6px; }
+            body {
+                width: 80mm !important;
+                margin: 0 !important;
+                padding: 2mm !important;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            /* Force black text for thermal printers */
+            * {
+                color: #000 !important;
+                background: #fff !important;
+            }
+        }
+        
+        .no-print {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 5px 10px;
+            margin: 2px;
+            border: 1px solid #000;
+            background: #f0f0f0;
+            cursor: pointer;
+            font-size: 11px;
         }
     </style>
 </head>
 <body>
     <div class="receipt-header">
-        <div class="brand">
-            <!-- Inline hotel SVG icon (fa-hotel style) -->
-            <svg viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <path fill="#000" d="M464 32H48C21.5 32 0 53.5 0 80v320h48V336h480v64h48V80c0-26.5-21.5-48-48-48zM96 304H64v-48h32v48zm0-96H64v-48h32v48zm176 96H240v-48h32v48zm0-96H240v-48h32v48zm176 96h-32v-48h32v48zm0-96h-32v-48h32v48zM128 160h320v96H128v-96z"/>
-            </svg>
-
-            <h2>NEW DF HOTEL</h2>
-        </div>
-
-        <div style="margin-top:6px; font-size:11px;">
-            <div>Dar es Salaam, Kimara</div>
-            <div>P.O. Box 12334</div>
-            <div>Phone: +255 712 345 678</div>
+        <div class="hotel-name">NEW DF HOTEL</div>
+        <div style="font-size:10px;">
+            Bukombe, Geita<br>
+            S.L.P 02<br>
+            +255 712 345 678
         </div>
     </div>
 
     <div class="receipt-info">
-        <p><strong>Transaction ID:</strong> ${sale.id}</p>
+        <p><strong>Receipt:</strong> #${sale.id}</p>
         <p><strong>Date:</strong> ${new Date(sale.created_at).toLocaleString()}</p>
-        <p><strong>Payment:</strong> ${sale.payment_method}</p>
+        <p><strong>Payment:</strong> ${sale.payment_method.toUpperCase()}</p>
+        <p><strong>Cashier:</strong> ${sale.user || 'System'}</p>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width:55%;">Item</th>
-                <th style="width:15%; text-align:right;">Qty</th>
-                <th style="width:15%; text-align:right;">Price</th>
-                <th style="width:15%; text-align:right;">Total</th>
+                <th>Item</th>
+                <th style="text-align:center">Qty</th>
+                <th style="text-align:right">Price</th>
+                <th style="text-align:right">Total</th>
             </tr>
         </thead>
         <tbody>
@@ -649,47 +640,44 @@ function generateReceiptHtml(sale) {
         </tbody>
     </table>
 
-    <div class="total-row">
-        <p style="text-align:right; margin:0;"><strong>Grand Total: Tshs ${total.toLocaleString()}</strong></p>
+    <div class="total-row" style="text-align:right;">
+        <strong>GRAND TOTAL: Tshs ${total.toLocaleString()}</strong>
     </div>
 
-<div style="text-align:center; margin:10px 0;">
- <svg id="barcode"></svg>
-</div>
+    <div class="barcode">
+        *SALE-${sale.id}* <!-- Text barcode alternative -->
+    </div>
 
     <div class="footer">
-        <p>Thank you for your purchase!</p>
+        <p>** THANK YOU FOR YOUR BUSINESS **</p>
         <p>Printed: ${new Date().toLocaleString()}</p>
+        <p>Have a great day!</p>
     </div>
 
     <div class="no-print">
-        <button class="btn btn-print" onclick="window.print()">Print Receipt</button>
-        <button class="btn btn-close" onclick="window.close()">Close Window</button>
+        <button class="btn" onclick="window.print()">🖨️ Print Receipt</button>
+        <button class="btn" onclick="window.close()">❌ Close</button>
     </div>
 
     <script>
+        // Auto-print for POS systems
         window.onload = function() {
+            // Try to auto-print after a short delay
             setTimeout(function() {
-                window.print();
+                if (!window.matchMedia || !window.matchMedia('print').matches) {
+                    window.print();
+                }
             }, 500);
         };
-        window.onload = function() {
-        JsBarcode("#barcode", "SALE-" + ${sale.id}, {
-            format: "CODE128",
-            lineColor: "#000",
-            width: 2,
-            height: 40,
-            displayValue: true
-        });
 
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    };
+        // Handle print dialog close
+        window.onafterprint = function() {
+            // Optional: auto-close after printing
+            // setTimeout(function() { window.close(); }, 1000);
+        };
     </script>
 </body>
-</html>
-    `;
+</html>`;
 }
 
 function fetchTotalSalesToday() {

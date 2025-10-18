@@ -164,8 +164,7 @@ $user=getUserById($_SESSION['user_id']);
                         <thead>
                             <tr>
                                 <th>Sale ID</th>
-                                <th>Product</th>
-                                <th>Quantity</th>
+                                <th>Created_by</th>
                                 <th>Total Price</th>
                                 <th>Payment Method</th>
                                 <th>Date</th>
@@ -184,6 +183,8 @@ $user=getUserById($_SESSION['user_id']);
         <div class="content-section" id="money">
             <div class="section-header">
                 <h2>Money Management</h2>
+                <button class="btn btn-primary" onclick="openAddExpenseModal()">Add New Expense</button>
+    <button class="btn btn-success" onclick="openAddBankingModal()">Add Banking Transaction</button>
             </div>
             
             <div class="card">
@@ -336,7 +337,7 @@ $user=getUserById($_SESSION['user_id']);
         <div class="content-section" id="manage-users">
     <div class="section-header">
         <h2>Manage Users</h2>
-        <button class="btn btn-primary" onclick="openAddUserModal()">Add New User</button>
+        <button class="btn btn-primary" onclick="openAddUserModal()">Add New Cashier</button>
     </div>
 
     <div class="card">

@@ -17,10 +17,14 @@ switch($action){
     break;
 
     case 'getAll':
-        $limit = $_GET['limit'] ?? 10;
-        $reports = getReports($limit);
-        echo json_encode($reports);
-        break;
+    $limit = $_GET['limit'] ?? 10;
+    $reports = getReports($limit);
+    if ($reports !== false) {
+        echo json_encode(['success' => true, 'data' => $reports]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to fetch reports']);
+    }
+    break;
 
     case 'getById':
         $id = $_GET['id'] ?? 0;

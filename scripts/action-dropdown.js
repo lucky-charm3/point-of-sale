@@ -51,6 +51,12 @@ class ActionDropdown {
     toggle(dropdownId) {
         const dropdown = document.getElementById(dropdownId);
         const overlay = document.getElementById('actionOverlay');
+        const button = dropdown.previousElementSibling;
+
+         const rect = button.getBoundingClientRect();
+
+         dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+         dropdown.style.left = (rect.left + window.scrollX) + 'px';
         
         if (this.currentDropdown && this.currentDropdown !== dropdown) {
             this.currentDropdown.classList.remove('show');
